@@ -1,7 +1,5 @@
-
-#    uvicorn cosine_apy:app --reload
+# uvicorn cosine_api:app --reload   
 # API will be at http://127.0.0.1:8000
-# Docs will be at http://127.0.0.1:8000/docs
 
 import pandas as pd
 import numpy as np
@@ -43,14 +41,11 @@ def load_data_and_model():
     try:
         df = pd.read_csv(DATA_FILE)
         
-        # Drop any potential duplicates to keep IDs unique
         df = df.drop_duplicates(subset=['track_id']).reset_index(drop=True)
         
-        # --- Prepare Recommendation Data ---
         pca_feature_columns = ['PCA1', 'PCA2', 'PCA3', 'PCA4', 'PCA5']
         pca_features = df[pca_feature_columns].values
         
-        # Create a mapping from track_id to its index number (row number)
         track_id_to_index = pd.Series(df.index, index=df['track_id'])
         
         print(f"Successfully loaded {len(df)} songs and their features.")
@@ -61,14 +56,13 @@ def load_data_and_model():
     except Exception as e:
         print(f"FATAL ERROR: An error occurred during data loading: {e}")
 
-# --- Initialize the FastAPI App ---
+
 app = FastAPI(
     title="Song Recommendation API",
     description="An API for getting song recommendations and details.",
     version="2.2.0" 
 )
 
-# --- App Startup Event ---
 @app.on_event("startup")
 async def startup_event():
     
@@ -86,7 +80,7 @@ def get_song_details_from_ids(track_ids: List[str]) -> List[Song]:
         return []
 
 def convert_df_to_songs(data_frame: pd.DataFrame) -> List[Song]:
-    """Converts a DataFrame to a list of Song models."""
+    
     return [Song(**row) for row in data_frame[basic_columns].to_dict(orient='records')]
 
 
@@ -108,9 +102,7 @@ def get_popular_songs(skip: int = 0, limit: int = 100):
 
 @app.get("/search", response_model=List[Song])
 def search_songs(query: str):
-    """
-    Searches for songs by track name, artist, or album name (general search).
-    """
+    
     if df is None:
         raise HTTPException(status_code=503, detail="Data is not loaded yet.")
     
@@ -132,9 +124,7 @@ def search_songs(query: str):
 
 @app.get("/album/{album_name}", response_model=List[Song])
 def get_songs_by_album(album_name: str):
-    """
-    NEW: Gets all songs from a specific album, sorted by popularity.
-    """
+    
     if df is None:
         raise HTTPException(status_code=503, detail="Data is not loaded yet.")
         
@@ -150,11 +140,7 @@ def get_songs_by_album(album_name: str):
 
 @app.get("/recommend/{track_id}", response_model=RecommendationResponse)
 def get_recommendations(track_id: str, limit: int = 10):
-    """
-    UPGRADED: Recommends 20 songs (or 2 * limit).
-    - 10 (or 'limit') based on audio similarity.
-    - 10 (or 'limit') based on popularity in the same genre.
-    """
+    
     if df is None or pca_features is None or track_id_to_index is None:
         raise HTTPException(status_code=503, detail="Model is not loaded yet.")
         
@@ -162,7 +148,6 @@ def get_recommendations(track_id: str, limit: int = 10):
         raise HTTPException(status_code=404, detail="Song 'track_id' not found in the dataset.")
     
     
-    # --- 1. Get Similarity-Based Songs ---
     song_index = track_id_to_index[track_id]
     song_vector = pca_features[song_index].reshape(1, -1)
     similarity_scores = cosine_similarity(song_vector, pca_features)[0]
@@ -174,7 +159,6 @@ def get_recommendations(track_id: str, limit: int = 10):
     similar_song_ids = df.iloc[top_song_indices]['track_id'].tolist()
     similar_songs = get_song_details_from_ids(similar_song_ids)
 
-    # --- 2. Get Popularity-Based Songs ---
     try:
         seed_song_genre = df.iloc[song_index]['track_genre']
     except Exception:
@@ -185,12 +169,11 @@ def get_recommendations(track_id: str, limit: int = 10):
     
     popular_in_genre_df = df[
         (df['track_genre'] == seed_song_genre) &
-        (~df['track_id'].isin(exclude_ids)) # Exclude already recommended songs
+        (~df['track_id'].isin(exclude_ids)) 
     ].sort_values(by='popularity', ascending=False).head(limit)
     
     popular_in_genre_songs = convert_df_to_songs(popular_in_genre_df)
     
-    # --- 3. Return the combined response ---
     return RecommendationResponse(
         similar_songs=similar_songs,
         popular_in_genre=popular_in_genre_songs
@@ -207,48 +190,35 @@ def get_all_genres():
     unique_genres.sort()
     return unique_genres
 
-
-# --- UPDATED FUNCTION ---
 @app.get("/songs_by_genre", response_model=List[Song])
 def get_songs_by_genre(genre: str, limit: int = 50, shuffle: bool = False):
     
     if df is None:
         raise HTTPException(status_code=503, detail="Data is not loaded yet.")
     
-    # Find songs matching the genre (case-insensitive)
     genre_songs_df = df[df['track_genre'].str.lower() == genre.lower()]
     
     if genre_songs_df.empty:
-        # Fallback to case-sensitive match
         genre_songs_df = df[df['track_genre'] == genre]
         
     if genre_songs_df.empty:
-        # Still no match, return an error
         raise HTTPException(status_code=404, detail=f"Genre '{genre}' not found.")
 
-    # --- NEW SHUFFLE LOGIC ---
     if shuffle:
-        # If shuffle is true, we want random songs from *outside* the most popular list.
         
-        # 1. Sort all songs by popularity
         sorted_genre_songs = genre_songs_df.sort_values(by='popularity', ascending=False)
-        
-        # 2. Get the *less popular* songs (all songs *after* the 'limit' cutoff)
+
         less_popular_songs_df = sorted_genre_songs.iloc[limit:]
         
-        # 3. Take a random sample from this less popular group
+        
         if less_popular_songs_df.empty:
-            # If there are no "less popular" songs (e.g., genre has < 50 songs)
-            # just shuffle the ones we have (this shuffles the popular ones).
             num_songs_to_sample = min(limit, len(sorted_genre_songs))
             final_songs_df = sorted_genre_songs.sample(n=num_songs_to_sample)
         else:
-            # Take a random sample of 50 from the less popular ones
             num_songs_to_sample = min(limit, len(less_popular_songs_df))
             final_songs_df = less_popular_songs_df.sample(n=num_songs_to_sample)
             
     else:
-        # Otherwise (shuffle=false), sort by popularity (default behavior)
         final_songs_df = genre_songs_df.sort_values(by='popularity', ascending=False).head(limit)
     
     return convert_df_to_songs(final_songs_df)
