@@ -1,4 +1,4 @@
-#    uvicorn cosine_api_knn:app --reload
+#    uvicorn knn_api:app --reload
 # API will be at http://127.0.0.1:8000
 
 import pandas as pd
@@ -201,7 +201,7 @@ def get_all_genres():
         
     unique_genres = df['track_genre'].unique().tolist()
     unique_genres.sort()
-    return unique_gensres
+    return unique_genres
 
 @app.get("/songs_by_genre", response_model=List[Song])
 def get_songs_by_genre(genre: str, limit: int = 50, shuffle: bool = False):
