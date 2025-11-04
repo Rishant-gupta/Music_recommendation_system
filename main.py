@@ -2,11 +2,11 @@
 # API will be at http://127.0.0.1:8000
 
 import pandas as pd
-import numpy as np
 from fastapi import FastAPI, HTTPException
 from sklearn.neighbors import NearestNeighbors
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
+from fastapi.middleware.cors import CORSMiddleware  # NEW! Import this
 
 class Song(BaseModel):
     
@@ -72,6 +72,26 @@ app = FastAPI(
     description="An API for getting song recommendations and details (Optimized with KNN).",
     version="3.0.0" 
 )
+
+# NEW! Add this CORS middleware block
+# This tells the browser that it's safe for your frontend
+# to request data from this API.
+origins = [
+    "http://localhost",
+    "http://localhost:3000",  # Default for React
+    "http://localhost:8080",  # Default for Vue
+    "http://localhost:4200",  # Default for Angular
+    "*"  # Or just allow all origins for a simple college project
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
+
 
 @app.on_event("startup")
 async def startup_event():
