@@ -7,10 +7,7 @@ from fastapi import FastAPI, HTTPException
 from sklearn.neighbors import NearestNeighbors
 from pydantic import BaseModel
 from typing import List, Optional
-
-# <<< START OF ADDED IMPORT >>>
 from fastapi.middleware.cors import CORSMiddleware
-# <<< END OF ADDED IMPORT >>>
 
 class Song(BaseModel):
     
@@ -37,7 +34,6 @@ track_id_to_index = None
 nn_model = None 
 
 basic_columns = ['track_id', 'track_name', 'artists', 'album_name', 'popularity', 'duration_min', 'track_genre', 'img', 'preview']
-
 
 def load_data_and_model():
     
@@ -73,27 +69,24 @@ def load_data_and_model():
 
 app = FastAPI(
     title="Song Recommendation API",
-    description="An API for getting song recommendations and details (Optimized with KNN).",
+    description="An API for getting song recommendations and details.",
     version="3.0.0" 
 )
 
-# <<< START OF ADDED CODE BLOCK >>>
-# This is the new section to allow your Vercel frontend to make requests
 origins = [
-    "https://music-system-pgz2.vercel.app",  # Your Vercel frontend URL
+    "https://music-system-pgz2.vercel.app",  
     "http://localhost",
-    "http://localhost:3000", # Common local frontend dev port
-    "http://localhost:5173", # Common local (Vite) frontend dev port
+    "http://localhost:3000",
+    "http://localhost:5173",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-# <<< END OF ADDED CODE BLOCK >>>
 
 
 @app.on_event("startup")
@@ -124,9 +117,7 @@ def read_root():
 
 @app.get("/popular", response_model=List[Song])
 def get_popular_songs(skip: int = 0, limit: int = 100):
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
-        
+    
     popular_songs_df = df.sort_values(by='popularity', ascending=False)
     paginated_df = popular_songs_df.iloc[skip : skip + limit]
     
@@ -135,9 +126,6 @@ def get_popular_songs(skip: int = 0, limit: int = 100):
 
 @app.get("/search", response_model=List[Song])
 def search_songs(query: str):
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
     
     if not query:
         raise HTTPException(status_code=400, detail="A 'query' parameter is required.")
@@ -157,9 +145,6 @@ def search_songs(query: str):
 
 @app.get("/album/{album_name}", response_model=List[Song])
 def get_songs_by_album(album_name: str):
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
         
     album_songs_df = df[df['album_name'].str.lower() == album_name.lower()]
     
@@ -173,11 +158,7 @@ def get_songs_by_album(album_name: str):
 
 @app.get("/recommend/{track_id}", response_model=RecommendationResponse)
 def get_recommendations(track_id: str, limit: int = 10):
-    
-    
-    if df is None or pca_features is None or track_id_to_index is None or nn_model is None:
-        raise HTTPException(status_code=503, detail="Model is not loaded yet.")
-        
+            
     if track_id not in track_id_to_index:
         raise HTTPException(status_code=404, detail="Song 'track_id' not found in the dataset.")
     
@@ -218,9 +199,6 @@ def get_recommendations(track_id: str, limit: int = 10):
 
 @app.get("/genres", response_model=List[str])
 def get_all_genres():
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
         
     unique_genres = df['track_genre'].unique().tolist()
     unique_genres.sort()
@@ -229,7 +207,29 @@ def get_all_genres():
 @app.get("/songs_by_genre", response_model=List[Song])
 def get_songs_by_genre(genre: str, limit: int = 50, shuffle: bool = False):
     
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
+    genre_songs_df = df[df['track_genre'].str.lower() == genre.lower()]
     
-    genre_songs_df = df[df['track_genre'].str.lower()
+    if genre_songs_df.empty:
+        genre_songs_df = df[df['track_genre'] == genre]
+        
+    if genre_songs_df.empty:
+        raise HTTPException(status_code=404, detail=f"Genre '{genre}' not found.")
+
+    if shuffle:
+        
+        sorted_genre_songs = genre_songs_df.sort_values(by='popularity', ascending=False)
+
+        less_popular_songs_df = sorted_genre_songs.iloc[limit:]
+        
+        
+        if less_popular_songs_df.empty:
+            num_songs_to_sample = min(limit, len(sorted_genre_songs))
+            final_songs_df = sorted_genre_songs.sample(n=num_songs_to_sample)
+        else:
+            num_songs_to_sample = min(limit, len(less_popular_songs_df))
+            final_songs_df = less_popular_songs_df.sample(n=num_songs_to_sample)
+            
+    else:
+        final_songs_df = genre_songs_df.sort_values(by='popularity', ascending=False).head(limit)
+    
+    return convert_df_to_songs(final_songs_df)
