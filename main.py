@@ -2,11 +2,15 @@
 # API will be at http://127.0.0.1:8000
 
 import pandas as pd
+import numpy as np
 from fastapi import FastAPI, HTTPException
 from sklearn.neighbors import NearestNeighbors
 from pydantic import BaseModel
-from typing import List
-from fastapi.middleware.cors import CORSMiddleware  # NEW! Import this
+from typing import List, Optional
+
+# <<< START OF ADDED IMPORT >>>
+from fastapi.middleware.cors import CORSMiddleware
+# <<< END OF ADDED IMPORT >>>
 
 class Song(BaseModel):
     
@@ -73,15 +77,13 @@ app = FastAPI(
     version="3.0.0" 
 )
 
-# NEW! Add this CORS middleware block
-# This tells the browser that it's safe for your frontend
-# to request data from this API.
+# <<< START OF ADDED CODE BLOCK >>>
+# This is the new section to allow your Vercel frontend to make requests
 origins = [
+    "https://music-system-pgz2.vercel.app",  # Your Vercel frontend URL
     "http://localhost",
-    "http://localhost:3000",  # Default for React
-    "http://localhost:8080",  # Default for Vue
-    "http://localhost:4200",  # Default for Angular
-    "*"  # Or just allow all origins for a simple college project
+    "http://localhost:3000", # Common local frontend dev port
+    "http://localhost:5173", # Common local (Vite) frontend dev port
 ]
 
 app.add_middleware(
@@ -91,6 +93,7 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
 )
+# <<< END OF ADDED CODE BLOCK >>>
 
 
 @app.on_event("startup")
@@ -229,29 +232,4 @@ def get_songs_by_genre(genre: str, limit: int = 50, shuffle: bool = False):
     if df is None:
         raise HTTPException(status_code=503, detail="Data is not loaded yet.")
     
-    genre_songs_df = df[df['track_genre'].str.lower() == genre.lower()]
-    
-    if genre_songs_df.empty:
-        genre_songs_df = df[df['track_genre'] == genre]
-        
-    if genre_songs_df.empty:
-        raise HTTPException(status_code=404, detail=f"Genre '{genre}' not found.")
-
-    if shuffle:
-        
-        sorted_genre_songs = genre_songs_df.sort_values(by='popularity', ascending=False)
-
-        less_popular_songs_df = sorted_genre_songs.iloc[limit:]
-        
-        
-        if less_popular_songs_df.empty:
-            num_songs_to_sample = min(limit, len(sorted_genre_songs))
-            final_songs_df = sorted_genre_songs.sample(n=num_songs_to_sample)
-        else:
-            num_songs_to_sample = min(limit, len(less_popular_songs_df))
-            final_songs_df = less_popular_songs_df.sample(n=num_songs_to_sample)
-            
-    else:
-        final_songs_df = genre_songs_df.sort_values(by='popularity', ascending=False).head(limit)
-    
-    return convert_df_to_songs(final_songs_df)
+    genre_songs_df = df[df['track_genre'].str.lower()
