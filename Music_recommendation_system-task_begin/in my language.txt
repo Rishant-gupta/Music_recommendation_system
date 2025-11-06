@@ -1,0 +1,12 @@
+first i took a dataset of music which contains approx 144000 rows on which i performed eda then ki fist tried randomforset on it in which i run first grid search cv which gives me best hyperparameter which links then it took a lot of time to get best hyperpaarmeter so i solved it by using random search cv which is fast i used that to train my randomforset cv first whic gives acuuracy of 93% linear svm give 85% so it tells to juse random forst i also apllied k fold 3 which divide data in train test split into fold and pick best on to excuete 
+
+is i am right upto here
+
+now i observed that it is creating a issue due to unmatch col one which conatin numring and 93% is a error so now
+i redone eda first remve outliers remove duplicate which can affect the model and it conain 144 genre which is very hard to handle so i converted it into 11 important genere there are many features so i applied pca to reduce that feature into 5 inportant features into 5 pca now my new procceded data 144400 to 84 thousand rows 144 genre to 11 genre features to 5 important features  
+
+now i used that new procced data and applied cosin to find similar songs but there is issue which on creation of similarity matrix it created a huge matrix which requres approx 50 gb space in billions which creates a memory crash problem then i used a knn to fine 50 nearest to that song which solves the memory crash problem so my one part which is finding 50 similar songs are done  
+now nest part is to do samrt fillter out of 50 songs in order for this i trained my model for random forset so now begn i took new proccesed datset first i run random search cv and get best hyperpaarmeters on which i tarined my model using this hyperparameters i trained my random forest and got 63% acuuracy then now this model will give top 10 
+
+
+
