@@ -1,5 +1,7 @@
 # ML Backend: Development Journey & Final Models
 
+**[➡️ View the Live Deployed App Here ⬅️](https://music-system-pgz2.vercel.app/)**
+
 This `README` documents the complete development process for the machine learning backend, from initial data exploration and model experimentation to the final, scalable solutions.
 
 My work focused on two main tasks:
@@ -45,13 +47,14 @@ This was my primary learning and development task. The goal was to predict a son
 
 ## 2. 🎵 The Song Recommender (Cosine vs. KNN)
 
+*(The link is now at the top of the README)*
+
 My second task was to build a song recommender. This became a story of hitting a hard technical limit and engineering a more advanced solution.
 
 ### Step 1: The Initial Experiment (Cosine Similarity)
 * **File:** `notebooks/recmdr_cosine.ipynb`
 * **Goal:** My first approach was to use `cosine_similarity`. The plan was to build a complete similarity matrix comparing every song to every other song.
-* **The Problem:** This experiment **failed with a memory error**. With over 81,000 songs, the matrix size would be $81,343 \times 81,343$, creating **over 6.6 billion values**.
-* 
+* **The Problem:** This experiment **failed with a memory error**. With over 81,000 songs, the matrix size would be $81,343 \times 81,343$, creating **over 6.6 billion values**. 
 * **The Result:** This calculation required far too much memory (over 50GB) and consistently crashed the session.
 * **Lesson Learned:** I proved that this $O(n^2)$ approach is not a scalable solution for real-world datasets of this size.
 
@@ -60,41 +63,3 @@ My second task was to build a song recommender. This became a story of hitting a
 * **Goal:** To solve the memory crash, I re-implemented the recommender using `NearestNeighbors` (KNN).
 * **How it Works:** Instead of building the giant matrix, KNN builds an efficient index  of the song features. When we ask for recommendations, it just queries this index to find the "closest" points.
 * **The Result:** This model is **fast, uses almost no RAM**, and successfully generates recommendations from the full dataset. This is the final, working solution.
-
-
-
-Music_recommendation_system-task_begin_2/
-├── .gitignore              
-├── README.md               
-|
-│
-├── notebooks/              
-│   ├── music_EDA.ipynb
-│   ├── mapping_genre.ipynb
-│   ├── populrity_pred_mod.ipynb
-│   ├── recmdr_cosine.ipynb
-│   ├── recmdr_knn.ipynb
-│   └── random_forest_updated.ipynb
-│
-├── data/                   
-│   ├── dataset.csv
-│   └── processed_data.txt
-│
-├── models/                
-│   └── popularity_model.pkl
-│
-└── main.ipynb
-
-
-
-
-
-
-
-
-
-
-
-
-
-
