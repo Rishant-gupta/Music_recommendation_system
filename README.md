@@ -63,3 +63,46 @@ My second task was to build a song recommender. This became a story of hitting a
 * **Goal:** To solve the memory crash, I re-implemented the recommender using `NearestNeighbors` (KNN).
 * **How it Works:** Instead of building the giant matrix, KNN builds an efficient index  of the song features. When we ask for recommendations, it just queries this index to find the "closest" points.
 * **The Result:** This model is **fast, uses almost no RAM**, and successfully generates recommendations from the full dataset. This is the final, working solution.
+
+
+Music_recommendation_system-task_begin_2/
+
+├── .gitignore              
+
+├── README.md               
+
+|
+
+│
+
+├── notebooks/              
+
+│   ├── music_EDA.ipynb
+
+│   ├── mapping_genre.ipynb
+
+│   ├── populrity_pred_mod.ipynb
+
+│   ├── recmdr_cosine.ipynb
+
+│   ├── recmdr_knn.ipynb
+
+│   └── random_forest_updated.ipynb
+
+│
+
+├── data/                   
+
+│   ├── dataset.csv
+
+│   └── processed_data.txt
+
+│
+
+├── models/                
+
+│   └── popularity_model.pkl
+
+│
+
+└── main.ipynb
