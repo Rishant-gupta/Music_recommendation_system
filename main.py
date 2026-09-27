@@ -1,12 +1,13 @@
-# uvicorn cosine_api:app --reload   
+#    uvicorn knn_api:app --reload
 # API will be at http://127.0.0.1:8000
 
 import pandas as pd
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.neighbors import NearestNeighbors
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
 
 class Song(BaseModel):
     
@@ -30,13 +31,13 @@ DATA_FILE = 'music_final.csv'
 df = None
 pca_features = None  
 track_id_to_index = None 
+nn_model = None 
 
 basic_columns = ['track_id', 'track_name', 'artists', 'album_name', 'popularity', 'duration_min', 'track_genre', 'img', 'preview']
 
-
 def load_data_and_model():
     
-    global df, pca_features, track_id_to_index
+    global df, pca_features, track_id_to_index, nn_model 
     
     try:
         df = pd.read_csv(DATA_FILE)
@@ -49,6 +50,15 @@ def load_data_and_model():
         track_id_to_index = pd.Series(df.index, index=df['track_id'])
         
         print(f"Successfully loaded {len(df)} songs and their features.")
+        
+        
+        print("Building K-Nearest Neighbors index (using cosine metric)...")
+        
+        nn_model = NearestNeighbors(n_neighbors=51, metric='cosine', algorithm='auto')
+        nn_model.fit(pca_features)
+        print("KNN index built successfully.")
+        
+        
         print("Recommendation engine is ready for on-demand requests.")
         
     except FileNotFoundError:
@@ -60,8 +70,24 @@ def load_data_and_model():
 app = FastAPI(
     title="Song Recommendation API",
     description="An API for getting song recommendations and details.",
-    version="2.2.0" 
+    version="3.0.0" 
 )
+
+origins = [
+    "https://music-system-pgz2.vercel.app",  
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -91,9 +117,7 @@ def read_root():
 
 @app.get("/popular", response_model=List[Song])
 def get_popular_songs(skip: int = 0, limit: int = 100):
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
-        
+    
     popular_songs_df = df.sort_values(by='popularity', ascending=False)
     paginated_df = popular_songs_df.iloc[skip : skip + limit]
     
@@ -102,9 +126,6 @@ def get_popular_songs(skip: int = 0, limit: int = 100):
 
 @app.get("/search", response_model=List[Song])
 def search_songs(query: str):
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
     
     if not query:
         raise HTTPException(status_code=400, detail="A 'query' parameter is required.")
@@ -124,9 +145,6 @@ def search_songs(query: str):
 
 @app.get("/album/{album_name}", response_model=List[Song])
 def get_songs_by_album(album_name: str):
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
         
     album_songs_df = df[df['album_name'].str.lower() == album_name.lower()]
     
@@ -140,21 +158,20 @@ def get_songs_by_album(album_name: str):
 
 @app.get("/recommend/{track_id}", response_model=RecommendationResponse)
 def get_recommendations(track_id: str, limit: int = 10):
-    
-    if df is None or pca_features is None or track_id_to_index is None:
-        raise HTTPException(status_code=503, detail="Model is not loaded yet.")
-        
+            
     if track_id not in track_id_to_index:
         raise HTTPException(status_code=404, detail="Song 'track_id' not found in the dataset.")
     
     
     song_index = track_id_to_index[track_id]
     song_vector = pca_features[song_index].reshape(1, -1)
-    similarity_scores = cosine_similarity(song_vector, pca_features)[0]
     
-    scores_list = list(enumerate(similarity_scores))
-    sorted_similar_songs = sorted(scores_list, key=lambda x: x[1], reverse=True)
-    top_song_indices = [i[0] for i in sorted_similar_songs[1 : limit + 1]]
+    
+    distances, indices = nn_model.kneighbors(song_vector, n_neighbors=limit + 1)
+    
+    
+    top_song_indices = indices[0][1:]
+    
     
     similar_song_ids = df.iloc[top_song_indices]['track_id'].tolist()
     similar_songs = get_song_details_from_ids(similar_song_ids)
@@ -182,9 +199,6 @@ def get_recommendations(track_id: str, limit: int = 10):
 
 @app.get("/genres", response_model=List[str])
 def get_all_genres():
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
         
     unique_genres = df['track_genre'].unique().tolist()
     unique_genres.sort()
@@ -192,9 +206,6 @@ def get_all_genres():
 
 @app.get("/songs_by_genre", response_model=List[Song])
 def get_songs_by_genre(genre: str, limit: int = 50, shuffle: bool = False):
-    
-    if df is None:
-        raise HTTPException(status_code=503, detail="Data is not loaded yet.")
     
     genre_songs_df = df[df['track_genre'].str.lower() == genre.lower()]
     
