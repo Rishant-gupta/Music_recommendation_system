@@ -1,0 +1,135 @@
+.grid-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  margin-bottom: 1px;
+  margin-right: 2%;
+  justify-content: space-between;
+  margin-top: 2%;
+}
+
+.grid-name{
+  color:white;
+  font-size: 1rem;
+  margin-left: 25px;
+}
+
+.see-all {
+  color: #a259ff;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.see-all:hover {
+  color: #af7df2;
+  text-decoration: underline;
+}
+
+.grid-flex {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+.arrow-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.arrow-icon:active {
+  transform: scale(1.2);
+}
+
+.song-grid {
+  display: flex;
+  overflow-x: auto;
+  gap: 20px;
+  padding: 0 20px;
+  color: white;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  flex-grow: 1;
+  margin: 15px 0px;
+}
+
+.song-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.song-tile {
+  display: block;
+  min-width: 10%;
+  background-color: #1e1e2f;
+  padding: 8px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  width: 160px;
+  min-width: 160px; 
+}
+
+.song-tile img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.song-tile div {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-tile span {
+  display: block;
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+@media (max-width: 768px) {
+  .grid-name {
+    margin-left: 10px;
+  }
+  
+  .song-grid {
+    padding: 0 10px;
+    gap: 10px;
+  }
+
+  .song-tile {
+    width: 100px; 
+    min-width: 100px;
+  }
+
+  .song-tile img {
+    height: 90px;
+  }
+
+  .arrow-icon {
+    
+    display: none; 
+  }
+}

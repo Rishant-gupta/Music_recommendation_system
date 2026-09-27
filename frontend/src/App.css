@@ -1,0 +1,172 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #121212;
+  color: white;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  margin-left: 8%; 
+  margin-top: 70px;  
+}
+
+.page-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto; 
+  overflow-x: hidden; 
+  box-sizing: border-box; 
+  scrollbar-width: none;
+}
+
+.main-page-body {
+  height: 100%;
+  width: 100%;
+}
+
+
+.page-body-home {
+  /* background-image: url('./components/assets/background-image.png'); */
+  background-size: 100% auto; 
+  background-repeat: repeat-y;
+  background-attachment: scroll; 
+}
+
+.page-body-library {
+  overflow-y: hidden;
+}
+
+.audio-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #181818;
+  padding: 10px 20px;
+  border-top: 1px solid #282828;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 1000; 
+}
+
+.song-info {
+  display: flex;
+  align-items: center;
+  flex: 2; 
+  min-width: 0; 
+}
+
+.song-info img {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  margin-right: 10px;
+}
+
+.song-details {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-details span {
+  font-size: 0.9rem;
+  color: #b3b3b3;
+}
+
+
+.heart-icon-player {
+  color: #aaa;
+  cursor: pointer;
+  margin-left: 15px;
+  font-size: 20px;
+}
+.heart-icon-player:hover {
+  color: white;
+}
+.heart-icon-player.liked {
+  color: #1ed760; 
+}
+
+
+.player-wrapper {
+  flex: 10; 
+  display: flex;
+  justify-content:flex-end;
+}
+
+.player-wrapper .audio-player-container {
+  width: 95%;
+  max-width: 900px; 
+}
+
+.player-wrapper audio {
+  width: 100%;
+}
+
+.audio-controls-right {
+  flex: 1; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.audio-close-btn {
+  cursor: pointer;
+  margin-right: 15px;
+  color: #b3b3b3;
+}
+
+.audio-close-btn:hover {
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0; 
+    margin-top: 85px; 
+    margin-bottom: 4%;
+    padding-bottom: 120px; 
+  }
+  
+  .main-page-body {
+    height: auto;
+  }
+
+  .page-body {
+    padding: 10px; 
+  }
+  
+  .page-body-library {
+    overflow-y: auto; 
+  }
+
+  .audio-bar {
+    position: fixed; 
+    bottom: 60px; 
+    left: 0;
+    width: 100%;
+    z-index: 1001; 
+  }
+
+  .song-info {
+    flex: 1; 
+  }
+  
+  .song-details span {
+    display: none; 
+  }
+
+  .player-wrapper {
+    flex: 2.5; 
+  }
+
+  .audio-controls-right {
+    flex: 0.2; 
+  }
+}
